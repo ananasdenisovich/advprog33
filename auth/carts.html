@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+</head>
+
+<body>
+    <h1>Shopping Cart</h1>
+
+    <form id="cartForm">
+        <label for="furnitureID">Furniture ID:</label>
+        <input type="text" id="furnitureID" name="furnitureID" required><br>
+
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" min="1" required><br>
+
+        <button type="button" onclick="addToCart()">Add to Cart</button>
+    </form>
+
+    <div id="cartResponse"></div>
+
+    <script>
+        function addToCart() {
+            const token = localStorage.getItem('jwtToken');
+            const furnitureID = document.getElementById("furnitureID").value;
+            const quantity = parseInt(document.getElementById("quantity").value); // Parse quantity as integer
+
+            const cartItem = {
+                furnitureID: furnitureID,
+                quantity: quantity, // Ensure quantity is parsed as integer
+            };
+
+            fetch('http://localhost:8080/cart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(cartItem),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Cart Response:', data);
+                    // Handle response data as needed
+                })
+                .catch(error => {
+                    console.error('Error adding to cart:', error);
+                    // Handle error as needed
+                });
+        }
+    </script>
+</body>
+
+</html>
+

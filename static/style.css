@@ -1,0 +1,94 @@
+:root {
+    --color-primary: #355C7D;
+    --color-secondary: #6C5B7B;
+    --color-accent: #C06C84;
+    --color-background: #f2f2f2;
+    --color-text: #353535;
+    --color-text-light: #757575;
+    --transition-speed: 0.3s;
+}
+
+body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    margin: 0;
+    padding: 40px;
+    line-height: 1.7;
+    text-align: center;
+}
+
+
+h1,
+h2 {
+    color: var(--color-primary);
+    margin-bottom: 20px;
+}
+
+button {
+    background-color: var(--color-accent);
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color var(--transition-speed), transform var(--transition-speed);
+    display: inline-block;
+    margin: 10px;
+}
+
+button:hover {
+    background-color: #E06C75;
+    transform: translateY(-2px);
+}
+
+form {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+input[type="number"],
+input[type="text"],
+input[type="password"],
+input[type="email"]
+{
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid var(--color-secondary);
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition: border-color var(--transition-speed);
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus
+
+ {
+    border-color: var(--color-accent);
+    outline: none;
+}
+
+#furnitureList {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+}
+
+.furniture-item {
+    background-color: white;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+    transition: box-shadow var(--transition-speed);
+}
+
+.furniture-item:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}

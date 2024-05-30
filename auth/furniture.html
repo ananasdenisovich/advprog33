@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/style.css">
+    <title>Furniture - Online Furniture Shop</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Forum&display=swap');
+
+        body,
+        button,
+        input,
+        textarea {
+            font-family: 'Forum', serif;
+        }
+
+        #furniture-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .furniture-card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        .furniture-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+
+        .furniture-title {
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+
+        .furniture-price {
+            font-weight: bold;
+        }
+
+        #page {
+            width: 50px;
+        }
+
+        .color-vanilla-soft {
+            background-color: #f3e5ab;
+        }
+
+        .color-white-wood {
+            background-color: #d8d0c1;
+        }
+
+        .color-blue {
+            background-color: #007bff;
+        }
+
+        .color-white-gloss {
+            background-color: #ffffff;
+        }
+
+        .color-white-metallic {
+            background-color: #eaeaea;
+        }
+
+        .color-wenge-premium {
+            background-color: #635147;
+        }
+
+        .color-black-metallic-rain {
+            background-color: #434343;
+        }
+
+        .color-light-grey-metallic-rain {
+            background-color: #b0b0b0;
+        }
+
+        .color-carpathian-spruce {
+            background-color: #3d6b3d;
+        }
+
+        .color-white {
+            background-color: #ffffff;
+        }
+
+        .color-grey-softwood {
+            background-color: #9e9e9e;
+        }
+
+        .color-nordic-oak {
+            background-color: #c19a6b;
+        }
+
+        .color-graphite-softwood {
+            background-color: #606060;
+        }
+
+        .color-cappuccino-softwood {
+            background-color: #8d6e63;
+        }
+
+        .color-cappuccino-veralinga {
+            background-color: #8b5f4d;
+        }
+
+        .color-angel {
+            background-color: #f4f4f4;
+        }
+
+        .color-blanco {
+            background-color: #ffffff;
+        }
+
+        .color-gainsboro-silk {
+            background-color: #dcdcdc;
+        }
+
+        .color-smoky-soft {
+            background-color: #5f5f5f;
+        }
+
+        .color-gallant {
+            background-color: #7d7d7d;
+        }
+
+        .color-filter {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            margin-right: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .color-square {
+            width: 17px;
+            height: 17px;
+            margin-right: 5px;
+            border: 1px solid #000;
+            margin-left: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="http://localhost:8080/">Terra Education</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav">
+                    <a class="nav-link active" aria-current="page" href="http://localhost:8080/">Home</a>
+                    <a class="nav-link" href="./Furniture.html">Furniture</a>
+                    <a class="nav-link" href="./Profile.html">Profile</a>
+                    <a class="nav-link" href="./Login.html">Login</a>
+                    <a class="nav-link" href="./Register.html">Register</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <br>
+    <br>
+    <h1>Furniture - Online Furniture Shop</h1>
+    <div>
+        <label for="sortDropdown">Sort by:</label>
+        <select id="sortDropdown">
+            <option value="name_asc">A to Z</option>
+            <option value="name_desc">Z to A</option>
+            <option value="price_asc">0 - More</option>
+            <option value="price_desc">More - 0</option>
+        </select>
+        <button onclick="applySorting()">Apply Sorting</button>
+    </div>
+    <form id="color-filter-form">
+        <div class="color-filter">
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Ваниль софт" id="vanilla-soft">
+                <label for="vanilla-soft">Ваниль софт</label>
+                <span class="color-square color-vanilla-soft"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Белое дерево" id="white-wood">
+                <label for="white-wood">Белое дерево</label>
+                <span class="color-square color-white-wood"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Голубой" id="blue">
+                <label for="blue">Голубой</label>
+                <span class="color-square color-blue"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Белый глянец" id="white-gloss">
+                <label for="white-gloss">Белый глянец</label>
+                <span class="color-square color-white-gloss"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Белый металлик" id="white-metallic">
+                <label for="white-metallic">Белый металлик</label>
+                <span class="color-square color-white-metallic"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Венге премиум" id="wenge-premium">
+                <label for="wenge-premium">Венге премиум</label>
+                <span class="color-square color-wenge-premium"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Черный металлик дождь" id="black-metallic-rain">
+                <label for="black-metallic-rain">Черный металлик дождь</label>
+                <span class="color-square color-black-metallic-rain"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Серый металлик дождь светлый" id="light-grey-metallic-rain">
+                <label for="light-grey-metallic-rain">Серый металлик дождь светлый</label>
+                <span class="color-square color-light-grey-metallic-rain"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Ель Карпатская" id="carpathian-spruce">
+                <label for="carpathian-spruce">Ель Карпатская</label>
+                <span class="color-square color-carpathian-spruce"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Белый" id="white">
+                <label for="white">Белый</label>
+                <span class="color-square color-white"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Grey Softwood" id="grey-softwood">
+                <label for="grey-softwood">Grey Softwood</label>
+                <span class="color-square color-grey-softwood"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Nordic Oak" id="nordic-oak">
+                <label for="nordic-oak">Nordic Oak</label>
+                <span class="color-square color-nordic-oak"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Graphite Softwood" id="graphite-softwood">
+                <label for="graphite-softwood">Graphite Softwood</label>
+                <span class="color-square color-graphite-softwood"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Cappuccino Softwood" id="cappuccino-softwood">
+                <label for="cappuccino-softwood">Cappuccino Softwood</label>
+                <span class="color-square color-cappuccino-softwood"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Cappuccino Veralinga" id="cappuccino-veralinga">
+                <label for="cappuccino-veralinga">Cappuccino Veralinga</label>
+                <span class="color-square color-cappuccino-veralinga"></span>
+            </div>
+
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Angel" id="angel">
+                <label for="angel">Angel</label>
+                <span class="color-square color-angel"></span>
+            </div>
+
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Blanco" id="blanco">
+                <label for="blanco">Blanco</label>
+                <span class="color-square color-blanco"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Гейнсборо Силк" id="gainsboro-silk">
+                <label for="gainsboro-silk">Гейнсборо Силк</label>
+                <span class="color-square color-gainsboro-silk"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Смоки Софт" id="smoky-soft">
+                <label for="smoky-soft">Смоки Софт</label>
+                <span class="color-square color-smoky-soft"></span>
+            </div>
+            <div class="color-option">
+                <input type="checkbox" name="color" value="Gallant" id="gallant">
+                <label for="gallant">Gallant</label>
+                <span class="color-square color-gallant"></span>
+            </div>
+        </div>
+        <button type="submit">Показать продукты</button>
+    </form>
+    <div>
+        <label for="minPrice">Min Price:</label>
+        <input type="number" id="minPrice" placeholder="Min Price">
+
+        <label for="maxPrice">Max Price:</label>
+        <input type="number" id="maxPrice" placeholder="Max Price">
+
+        <button onclick="applyFilter()">Apply Filter</button>
+
+    </div>
+
+
+
+
+
+
+
+
+    <div id="furniture-container"></div>
+    <div>
+        <button onclick="loadPreviousPage()">Previous</button>
+
+
+        <button onclick="loadNextPage()">Next</button>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let sortBy = 'title';
+        let sortOrder = 'asc';
+
+        const container = document.getElementById('furniture-container');
+        const pageInput = document.getElementById('page');
+
+        function getUserID() {
+            return localStorage.getItem('userID');
+        }
+        async function loadFurniture(sortBy, sortOrder, minPrice, maxPrice, page, itemsPerPage) {
+            try {
+                page = page && page >= 1 ? page : 1;
+                const userID = await getUserID();
+
+                const apiUrl = `/furniture?sort=${sortBy}&order=${sortOrder}&minPrice=${minPrice || ''}&maxPrice=${maxPrice || ''}&page=${page}&itemsPerPage=${itemsPerPage}`;
+
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                const fragment = document.createDocumentFragment();
+                data.forEach(furniture => {
+                    const card = document.createElement('div');
+                    card.className = 'furniture-card';
+
+                    const title = document.createElement('h2');
+                    title.className = 'furniture-title';
+                    title.textContent = furniture.title;
+
+                    const pictures = document.createElement('img');
+                    if (furniture.pictures && furniture.pictures.length > 0) {
+                        pictures.src = furniture.pictures[0].medium;
+                        pictures.alt = furniture.title;
+                    }
+
+                    const price = document.createElement('p');
+                    price.className = 'furniture-price';
+                    price.textContent = `Price: ${furniture.price}`;
+
+                    card.appendChild(pictures);
+                    card.appendChild(title);
+                    card.appendChild(price);
+
+                    fragment.appendChild(card);
+                });
+
+                container.innerHTML = '';
+                container.appendChild(fragment);
+
+                currentPage = page;
+                if (pageInput) {
+                    pageInput.value = currentPage;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                container.textContent = 'Failed to load furniture data.';
+            }
+        }
+        function applyFilter() {
+            const minPrice = document.getElementById('minPrice').value;
+            const maxPrice = document.getElementById('maxPrice').value;
+            const sortDropdown = document.getElementById('sortDropdown');
+            const selectedValue = sortDropdown.value;
+
+            switch (selectedValue) {
+                case 'name_asc':
+                    sortBy = 'title';
+                    sortOrder = 'asc';
+                    break;
+                case 'name_desc':
+                    sortBy = 'title';
+                    sortOrder = 'desc';
+                    break;
+                case 'price_asc':
+                    sortBy = 'price';
+                    sortOrder = 'asc';
+                    break;
+                case 'price_desc':
+                    sortBy = 'price';
+                    sortOrder = 'desc';
+                    break;
+                default:
+                    sortBy = 'title';
+                    sortOrder = 'asc';
+            }
+
+            const userID = getUserID();
+            loadFurniture(sortBy, sortOrder, minPrice, maxPrice, currentPage, itemsPerPage);
+            logUserAction('applyFilter', userID);
+        }
+
+
+        function applySorting() {
+            const sortDropdown = document.getElementById('sortDropdown');
+            const selectedValue = sortDropdown.value;
+
+            let sortBy;
+            let sortOrder;
+
+            switch (selectedValue) {
+                case 'name_asc':
+                    sortBy = 'title';
+                    sortOrder = 'asc';
+                    break;
+                case 'name_desc':
+                    sortBy = 'title';
+                    sortOrder = 'desc';
+                    break;
+                case 'price_asc':
+                    sortBy = 'price';
+                    sortOrder = 'asc';
+                    break;
+                case 'price_desc':
+                    sortBy = 'price';
+                    sortOrder = 'desc';
+                    break;
+                default:
+                    sortBy = 'title';
+                    sortOrder = 'asc';
+            }
+
+
+            const userID = getUserID();
+            loadFurniture(sortBy, sortOrder, minPrice, maxPrice, currentPage, itemsPerPage);
+            logUserAction('applyFilter', userID);
+        }
+
+        function applySorting() {
+            const sortDropdown = document.getElementById('sortDropdown');
+            const selectedValue = sortDropdown.value;
+
+            switch (selectedValue) {
+                case 'name_asc':
+                    sortBy = 'title';
+                    sortOrder = 'asc';
+                    break;
+                case 'name_desc':
+                    sortBy = 'title';
+                    sortOrder = 'desc';
+                    break;
+                case 'price_asc':
+                    sortBy = 'price';
+                    sortOrder = 'asc';
+                    break;
+                case 'price_desc':
+                    sortBy = 'price';
+                    sortOrder = 'desc';
+                    break;
+                default:
+                    sortBy = 'title';
+                    sortOrder = 'asc';
+            }
+
+            const userID = getUserID();
+            loadFurniture(sortBy, sortOrder);
+            logUserAction('applySorting', userID);
+        }
+        applySorting();
+
+
+        function applyPagination() {
+            itemsPerPage = document.getElementById('itemsPerPage').value;
+            const page = document.getElementById('page').value;
+
+            loadFurniture(sortBy, sortOrder, minPrice, maxPrice, page, itemsPerPage);
+        }
+
+
+        function loadPreviousPage() {
+            if (currentPage > 1) {
+                const userID = getUserID();
+                loadFurniture(sortBy, sortOrder, undefined, undefined, currentPage - 1, itemsPerPage);
+                logUserAction('loadPreviousPage', userID);
+            }
+        }
+
+        function loadNextPage() {
+            const userID = getUserID();
+            loadFurniture(sortBy, sortOrder, undefined, undefined, currentPage + 1, itemsPerPage);
+            logUserAction('loadNextPage', userID);
+        }
+        function logUserAction(action, userID) {
+            fetch('http://localhost:8080/logUserAction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: action,
+                    userID: userID,
+                }),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+
+        // Initial load
+        loadFurniture('title', 'asc', undefined, undefined, currentPage, itemsPerPage);
+        document.getElementById('color-filter-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            let selectedColors = [];
+            document.querySelectorAll('input[name="color"]:checked').forEach((checkbox) => {
+                selectedColors.push(checkbox.value);
+            });
+            const colorsQuery = selectedColors.join(',');
+            filterProductsByColor(colorsQuery);
+        });
+
+        function filterProductsByColor(colorsQuery) {
+            fetch(`/filter?color=${encodeURIComponent(colorsQuery)}`)
+                .then(response => response.json())
+                .then(data => displayProducts(data))
+                .catch(error => console.error('Error:', error));
+        }
+        function displayProducts(data) {
+            const container = document.getElementById('furniture-container');
+            container.innerHTML = '';
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'furniture-card';
+                div.innerHTML = `
+            <img src="${item.pictures[0].medium}" alt="${item.title}">
+            <h2>${item.title}</h2>
+            <p>${item.description}</p>
+            <p>Price: ${item.price}</p>
+            <button class="btn btn-primary buy-btn" data-id="${item.id}">Купить</button>
+        `;
+                container.appendChild(div);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.buy-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const itemId = this.getAttribute('data-id');
+                    addItemToCart(itemId);
+                });
+            });
+        });
+
+        function addItemToCart(itemId) {
+            const userID = getUserID(); // Убедитесь, что getUserID() корректно извлекает ID пользователя
+
+            fetch('/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userID, itemId }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Товар добавлен в корзину:', data);
+                    // Здесь может быть код для обновления интерфейса корзины
+                })
+                .catch(error => {
+                    console.error('Ошибка при добавлении в корзину:', error);
+                });
+        }
+
+    </script>
+</body>
+
+</html>
