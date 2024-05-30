@@ -248,6 +248,58 @@ func addToCart(c *gin.Context) {
 	// Return a success response with the cart ID and total price
 	c.JSON(http.StatusOK, gin.H{"message": "Item added to cart successfully", "cartID": result.InsertedID, "totalPrice": totalPrice})
 }
+func getUserCarts(c *gin.Context) {
+	// Extract user ID from JWT token claims
+	userID, err := getUserIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user ID"})
+		return
+	}
+
+	// Query carts collection to find all carts associated with the user
+	cartsCollection := client.Database("furnitureShopDB").Collection("carts")
+	cursor, err := cartsCollection.Find(context.TODO(), bson.M{"userID": userID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query carts"})
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	// Iterate through the cursor and collect all carts
+	var carts []CartItem
+	for cursor.Next(context.Background()) {
+		var cart CartItem
+		if err := cursor.Decode(&cart); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart"})
+			return
+		}
+		carts = append(carts, cart)
+	}
+
+	// Check for cursor errors
+	if err := cursor.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cursor error"})
+		return
+	}
+
+	// Return the list of carts to the client
+	c.JSON(http.StatusOK, carts)
+}
+
+// Helper function to extract user ID from JWT token claims
+func getUserIDFromToken(c *gin.Context) (primitive.ObjectID, error) {
+	tokenStr := c.GetHeader("Authorization")[7:] // Remove "Bearer " prefix
+
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if err != nil || !token.Valid {
+		return primitive.NilObjectID, err
+	}
+
+	return claims.UserID, nil
+}
 
 func main() {
 	logger := logrus.New()
@@ -303,6 +355,7 @@ func main() {
 	r.GET("/profile", AuthMiddleware("user"), userProfileHandler)
 	r.POST("/update", AuthMiddleware("user"), updateUserHandler)
 	r.POST("/cart", addToCart)
+	r.GET("/user-carts", getUserCarts)
 
 	r.Static("/static", "./static/")
 	r.StaticFS("/auth", http.Dir("auth"))
