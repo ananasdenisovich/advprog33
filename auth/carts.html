@@ -23,81 +23,135 @@
     <div id="cartResponse"></div>
 
     <h1>User Carts</h1>
-
+    <div id="userCarts"></div>
     <div id="cartsContainer"></div>
 
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // Fetch user carts from the server
-        fetchUserCarts();
-    });
+    <div id="paymentForm" style="display: none;">
+        <h2>Enter Payment Details</h2>
+        <form id="paymentDetailsForm">
+            <label for="cardNumber">Card Number:</label>
+            <input type="text" id="cardNumber" name="cardNumber" required><br>
+    
+            <label for="expiryDate">Expiry Date:</label>
+            <input type="text" id="expiryDate" name="expiryDate" required><br>
+    
+            <label for="cvv">CVV:</label>
+            <input type="text" id="cvv" name="cvv" required><br>
+    
+            <button type="button" onclick="confirmPayment()">Confirm Payment</button>
+        </form>
+    </div>
 
-    function fetchUserCarts() {
-        const token = localStorage.getItem('jwtToken');
-        fetch('http://localhost:8080/user-carts', {
-            method: 'GET',
+    <script>
+       const token = localStorage.getItem('jwtToken');
+
+function fetchUserCarts() {
+    fetch('http://localhost:8080/user-carts', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => response.json())
+    .then(carts => {
+        displayUserCarts(carts);
+    })
+    .catch(error => {
+        console.error('Error fetching user carts:', error);
+    });
+}
+
+function displayUserCarts(carts) {
+    const userCartsDiv = document.getElementById('userCarts');
+    userCartsDiv.innerHTML = '';
+
+    carts.forEach(cart => {
+        const cartDiv = document.createElement('div');
+        cartDiv.innerHTML = `
+            <p>Furniture ID: ${cart.furnitureID}</p>
+            <p>Furniture Name: ${cart.furnitureName}</p>
+            <p>Quantity: ${cart.quantity}</p>
+            <p>Total Price: ${cart.totalPrice}</p>
+            <p>Status: ${cart.status}</p>
+            <button onclick="showPaymentForm('${cart.cartID}')">Pay Now</button>
+            <hr>
+        `;
+        userCartsDiv.appendChild(cartDiv);
+    });
+}
+
+function showPaymentForm(cartID) {
+    document.getElementById('paymentForm').style.display = 'block';
+    document.getElementById('paymentDetailsForm').dataset.cartID = cartID;
+}
+
+
+function confirmPayment() {
+    const cartID = document.getElementById('paymentDetailsForm').dataset.cartID;
+    const cardNumber = document.getElementById('cardNumber').value;
+    const expiryDate = document.getElementById('expiryDate').value;
+    const cvv = document.getElementById('cvv').value;
+
+    const paymentDetails = {
+        cartID: cartID,
+        cardNumber: cardNumber,
+        expiryDate: expiryDate,
+        cvv: cvv,
+    };
+
+    fetch('http://localhost:8080/confirm-payment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(paymentDetails)
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        if (data.message === 'Payment successful') {
+            fetchUserCarts();  // Refresh carts
+            document.getElementById('paymentForm').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error confirming payment:', error);
+    });
+}
+
+function addToCart() {
+    const token = localStorage.getItem('jwtToken');
+    const furnitureID = document.getElementById("furnitureID").value;
+    const quantity = parseInt(document.getElementById("quantity").value); // Parse quantity as integer
+
+    const cartItem = {
+        furnitureID: furnitureID,
+        quantity: quantity, // Ensure quantity is parsed as integer
+    };
+
+    fetch('http://localhost:8080/cart', {
+            method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
+            body: JSON.stringify(cartItem),
         })
         .then(response => response.json())
         .then(data => {
-            // Display user carts on the page
-            displayUserCarts(data);
+            console.log('Cart Response:', data);
+            // Handle response data as needed
         })
         .catch(error => {
-            console.error('Error fetching user carts:', error);
+            console.error('Error adding to cart:', error);
+            // Handle error as needed
         });
-    }
+}
 
-    function displayUserCarts(carts) {
-        const cartsContainer = document.getElementById('cartsContainer');
-        // Clear previous content
-        cartsContainer.innerHTML = '';
-
-        // Display each cart
-        carts.forEach(cart => {
-            const cartDiv = document.createElement('div');
-            cartDiv.innerHTML = `
-                <h3>Cart ID: ${cart.cartID}</h3>
-                <p>Status: ${cart.status}</p>
-                <p>Total Price: ${cart.totalPrice}</p>
-                <!-- Add more cart details here as needed -->
-                <hr>
-            `;
-            cartsContainer.appendChild(cartDiv);
-        });
-    }
-        function addToCart() {
-            const token = localStorage.getItem('jwtToken');
-            const furnitureID = document.getElementById("furnitureID").value;
-            const quantity = parseInt(document.getElementById("quantity").value); // Parse quantity as integer
-
-            const cartItem = {
-                furnitureID: furnitureID,
-                quantity: quantity, // Ensure quantity is parsed as integer
-            };
-
-            fetch('http://localhost:8080/cart', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(cartItem),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Cart Response:', data);
-                    // Handle response data as needed
-                })
-                .catch(error => {
-                    console.error('Error adding to cart:', error);
-                    // Handle error as needed
-                });
-        }
-    </script>
+fetchUserCarts();
+</script>
 </body>
 
 </html>
-
