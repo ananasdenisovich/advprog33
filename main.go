@@ -317,13 +317,20 @@ func confirmPayment(c *gin.Context) {
 		CardNumber string             `json:"cardNumber"`
 		ExpiryDate string             `json:"expiryDate"`
 		CVV        string             `json:"cvv"`
-		TotalPrice float64            `json:"totalPrice"`
 	}
+
 	if err := c.BindJSON(&paymentDetails); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment details"})
 		return
 	}
 
+	// Retrieve cart details from the carts collection
+	var cart CartItem
+	err := cartsCollection.FindOne(context.TODO(), bson.M{"_id": paymentDetails.CartID}).Decode(&cart)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Cart not found"})
+		return
+	}
 	isPaymentSuccessful := true
 
 	if isPaymentSuccessful {
@@ -339,27 +346,27 @@ func confirmPayment(c *gin.Context) {
 			return
 		}
 
-		// Save payment details to payments collection
+		// Calculate total price
+		totalPrice := cart.TotalPrice
+
+		// Prepare payment document
 		payment := Payment{
-			UserID:     getUserIDFromContext(c),
 			CartID:     paymentDetails.CartID,
-			TotalPrice: paymentDetails.TotalPrice,
+			TotalPrice: totalPrice,
 			Timestamp:  time.Now(),
 		}
-
 		paymentsCollection := client.Database(databaseName).Collection("payments")
-		_, err = paymentsCollection.InsertOne(context.TODO(), payment)
+		// Insert payment document into payments collection
+		result, err := paymentsCollection.InsertOne(context.TODO(), payment)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save payment"})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Payment successful"})
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Payment failed"})
+		// Return success response
+		c.JSON(http.StatusOK, gin.H{"message": "Payment successful", "paymentID": result.InsertedID})
 	}
 }
-
 func getUserIDFromContext(c *gin.Context) primitive.ObjectID {
 	userID, _ := c.Get("userID") // Assuming you set "userID" in the context using middleware
 	if userID != nil {
