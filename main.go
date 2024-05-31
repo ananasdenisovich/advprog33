@@ -223,11 +223,23 @@ func addToCart(c *gin.Context) {
 	// Assign the total price to the cart item
 	cartItem.TotalPrice = totalPrice
 	cartItem.Status = "unpaid"
-	cartItem.UserID = claims.UserID // Set the UserID
+	cartItem.UserID = claims.UserID
 
 	// Insert the cart item into the database
 	cartsCollection := client.Database("furnitureShopDB").Collection("carts")
 	result, err := cartsCollection.InsertOne(context.TODO(), cartItem)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Update the cart item with the user ID
+	cartItemID := result.InsertedID.(primitive.ObjectID)
+	_, err = cartsCollection.UpdateOne(
+		context.TODO(),
+		bson.M{"_id": cartItemID},
+		bson.M{"$set": bson.M{"userID": claims.UserID, "cartID": cartItemID}}, // Set both userID and cartID
+	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -238,7 +250,7 @@ func addToCart(c *gin.Context) {
 	_, err = userCollection.UpdateOne(
 		context.TODO(),
 		bson.M{"email": claims.Email},
-		bson.M{"$set": bson.M{"cartID": result.InsertedID}}, // Use the cart item ID
+		bson.M{"$set": bson.M{"cartID": cartItemID}}, // Use the cart item ID
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -246,44 +258,45 @@ func addToCart(c *gin.Context) {
 	}
 
 	// Return a success response with the cart ID and total price
-	c.JSON(http.StatusOK, gin.H{"message": "Item added to cart successfully", "cartID": result.InsertedID, "totalPrice": totalPrice})
+	c.JSON(http.StatusOK, gin.H{"message": "Item added to cart successfully", "cartID": cartItemID, "totalPrice": totalPrice})
 }
 func getUserCarts(c *gin.Context) {
-	// Extract user ID from JWT token claims
-	userID, err := getUserIDFromToken(c)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user ID"})
+	tokenStr := c.GetHeader("Authorization")[7:] // Remove "Bearer " prefix
+
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	// Query carts collection to find all carts associated with the user
 	cartsCollection := client.Database("furnitureShopDB").Collection("carts")
-	cursor, err := cartsCollection.Find(context.TODO(), bson.M{"userID": userID})
+	var userCarts []CartItem
+	cursor, err := cartsCollection.Find(context.TODO(), bson.M{"userID": claims.UserID})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query carts"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	defer cursor.Close(context.TODO())
 
-	// Iterate through the cursor and collect all carts
-	var carts []CartItem
-	for cursor.Next(context.Background()) {
-		var cart CartItem
-		if err := cursor.Decode(&cart); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode cart"})
+	defer cursor.Close(context.TODO())
+	for cursor.Next(context.TODO()) {
+		var cartItem CartItem
+		if err = cursor.Decode(&cartItem); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		carts = append(carts, cart)
+		userCarts = append(userCarts, cartItem)
 	}
 
-	// Check for cursor errors
 	if err := cursor.Err(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cursor error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Return the list of carts to the client
-	c.JSON(http.StatusOK, carts)
+	c.JSON(http.StatusOK, userCarts)
 }
 
 // Helper function to extract user ID from JWT token claims
