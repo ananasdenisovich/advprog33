@@ -94,6 +94,13 @@ type Claims struct {
 	Email  string             `json:"email"`
 	jwt.StandardClaims
 }
+type Payment struct {
+	ID         primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	UserID     primitive.ObjectID `json:"userID,omitempty" bson:"userID,omitempty"`
+	CartID     primitive.ObjectID `json:"cartID,omitempty" bson:"cartID,omitempty"`
+	TotalPrice float64            `json:"totalPrice" bson:"totalPrice"`
+	Timestamp  time.Time          `json:"timestamp" bson:"timestamp"`
+}
 
 var carts map[string][]CartItem
 
@@ -183,7 +190,7 @@ func AuthMiddleware(requiredRole ...string) gin.HandlerFunc {
 }
 
 func addToCart(c *gin.Context) {
-	tokenStr := c.GetHeader("Authorization")[7:] // Remove "Bearer " prefix
+	tokenStr := c.GetHeader("Authorization")[7:]
 
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
@@ -201,14 +208,12 @@ func addToCart(c *gin.Context) {
 		return
 	}
 
-	// Convert the string representation of the furniture ID to an ObjectId
 	furnitureID, err := primitive.ObjectIDFromHex(cartItem.FurnitureID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid furniture ID"})
 		return
 	}
 
-	// Query the furniture item by its ObjectId
 	furnitureCollection := client.Database("furnitureShopDB").Collection("furniture")
 	var furniture Furniture
 	err = furnitureCollection.FindOne(context.TODO(), bson.M{"_id": furnitureID}).Decode(&furniture)
@@ -217,15 +222,12 @@ func addToCart(c *gin.Context) {
 		return
 	}
 
-	// Calculate the total price
 	totalPrice := float64(furniture.Price) * float64(cartItem.Quantity)
 
-	// Assign the total price to the cart item
 	cartItem.TotalPrice = totalPrice
 	cartItem.Status = "unpaid"
 	cartItem.UserID = claims.UserID
 
-	// Insert the cart item into the database
 	cartsCollection := client.Database("furnitureShopDB").Collection("carts")
 	result, err := cartsCollection.InsertOne(context.TODO(), cartItem)
 	if err != nil {
@@ -233,35 +235,32 @@ func addToCart(c *gin.Context) {
 		return
 	}
 
-	// Update the cart item with the user ID
 	cartItemID := result.InsertedID.(primitive.ObjectID)
 	_, err = cartsCollection.UpdateOne(
 		context.TODO(),
 		bson.M{"_id": cartItemID},
-		bson.M{"$set": bson.M{"userID": claims.UserID, "cartID": cartItemID}}, // Set both userID and cartID
+		bson.M{"$set": bson.M{"userID": claims.UserID, "cartID": cartItemID}},
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Update the user document to include the cart ID
 	userCollection := client.Database("furnitureShopDB").Collection("users")
 	_, err = userCollection.UpdateOne(
 		context.TODO(),
 		bson.M{"email": claims.Email},
-		bson.M{"$set": bson.M{"cartID": cartItemID}}, // Use the cart item ID
+		bson.M{"$set": bson.M{"cartID": cartItemID}},
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Return a success response with the cart ID and total price
 	c.JSON(http.StatusOK, gin.H{"message": "Item added to cart successfully", "cartID": cartItemID, "totalPrice": totalPrice})
 }
 func getUserCarts(c *gin.Context) {
-	tokenStr := c.GetHeader("Authorization")[7:] // Remove "Bearer " prefix
+	tokenStr := c.GetHeader("Authorization")[7:]
 
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
@@ -299,9 +298,8 @@ func getUserCarts(c *gin.Context) {
 	c.JSON(http.StatusOK, userCarts)
 }
 
-// Helper function to extract user ID from JWT token claims
 func getUserIDFromToken(c *gin.Context) (primitive.ObjectID, error) {
-	tokenStr := c.GetHeader("Authorization")[7:] // Remove "Bearer " prefix
+	tokenStr := c.GetHeader("Authorization")[7:]
 
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
@@ -312,6 +310,64 @@ func getUserIDFromToken(c *gin.Context) (primitive.ObjectID, error) {
 	}
 
 	return claims.UserID, nil
+}
+func confirmPayment(c *gin.Context) {
+	var paymentDetails struct {
+		CartID     primitive.ObjectID `json:"cartID"`
+		CardNumber string             `json:"cardNumber"`
+		ExpiryDate string             `json:"expiryDate"`
+		CVV        string             `json:"cvv"`
+		TotalPrice float64            `json:"totalPrice"`
+	}
+	if err := c.BindJSON(&paymentDetails); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment details"})
+		return
+	}
+
+	isPaymentSuccessful := true
+
+	if isPaymentSuccessful {
+		// Update cart status to "paid"
+		cartsCollection := client.Database(databaseName).Collection("carts")
+		_, err := cartsCollection.UpdateOne(
+			context.TODO(),
+			bson.M{"_id": paymentDetails.CartID},
+			bson.M{"$set": bson.M{"status": "paid"}},
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update cart status"})
+			return
+		}
+
+		// Save payment details to payments collection
+		payment := Payment{
+			UserID:     getUserIDFromContext(c),
+			CartID:     paymentDetails.CartID,
+			TotalPrice: paymentDetails.TotalPrice,
+			Timestamp:  time.Now(),
+		}
+
+		paymentsCollection := client.Database(databaseName).Collection("payments")
+		_, err = paymentsCollection.InsertOne(context.TODO(), payment)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save payment"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Payment successful"})
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Payment failed"})
+	}
+}
+
+func getUserIDFromContext(c *gin.Context) primitive.ObjectID {
+	userID, _ := c.Get("userID") // Assuming you set "userID" in the context using middleware
+	if userID != nil {
+		if id, ok := userID.(primitive.ObjectID); ok {
+			return id
+		}
+	}
+	return primitive.NilObjectID
 }
 
 func main() {
@@ -369,6 +425,7 @@ func main() {
 	r.POST("/update", AuthMiddleware("user"), updateUserHandler)
 	r.POST("/cart", addToCart)
 	r.GET("/user-carts", getUserCarts)
+	r.POST("/confirm-payment", confirmPayment)
 
 	r.Static("/static", "./static/")
 	r.StaticFS("/auth", http.Dir("auth"))
@@ -399,30 +456,10 @@ func main() {
 
 	defer client.Disconnect(ctx)
 
-	database := client.Database(databaseName)
-
 	if err := createUsersCollection(); err != nil {
 		logger.WithError(err).Fatal("Error creating users collection")
 		return
 	}
-
-	if err := addAgeField(); err != nil {
-		logger.WithError(err).Fatal("Error adding age field")
-		return
-	}
-	exampleUser := User{
-		Name:  "John Doe",
-		Email: "john.doe@example.com",
-	}
-
-	usersCollection := database.Collection(collectionName)
-	insertResult, err := usersCollection.InsertOne(ctx, exampleUser)
-	if err != nil {
-		logger.WithError(err).Fatal("Error inserting user")
-		return
-	}
-
-	logger.Info("Inserted user with ID:", insertResult.InsertedID)
 	logger.Info("Server is running on :8080...")
 
 	if err := r.Run(":8080"); err != nil {
