@@ -25,48 +25,49 @@
     <h1>User Carts</h1>
 
     <div id="cartsContainer"></div>
+
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Fetch user carts from the server
-            fetchUserCarts();
+    document.addEventListener("DOMContentLoaded", function () {
+        // Fetch user carts from the server
+        fetchUserCarts();
+    });
+
+    function fetchUserCarts() {
+        const token = localStorage.getItem('jwtToken');
+        fetch('http://localhost:8080/user-carts', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Display user carts on the page
+            displayUserCarts(data);
+        })
+        .catch(error => {
+            console.error('Error fetching user carts:', error);
         });
+    }
 
-        function fetchUserCarts() {
-            const token = localStorage.getItem('jwtToken');
-            fetch('http://localhost:8080/user-carts', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Display user carts on the page
-                displayUserCarts(data);
-            })
-            .catch(error => {
-                console.error('Error fetching user carts:', error);
-            });
-        }
+    function displayUserCarts(carts) {
+        const cartsContainer = document.getElementById('cartsContainer');
+        // Clear previous content
+        cartsContainer.innerHTML = '';
 
-        function displayUserCarts(carts) {
-            const cartsContainer = document.getElementById('cartsContainer');
-            // Clear previous content
-            cartsContainer.innerHTML = '';
-
-            // Display each cart
-            carts.forEach(cart => {
-                const cartDiv = document.createElement('div');
-                cartDiv.innerHTML = `
-                    <h3>Cart ID: ${cart._id}</h3>
-                    <p>Status: ${cart.status}</p>
-                    <p>Total Price: ${cart.totalPrice}</p>
-                    <!-- Add more cart details here as needed -->
-                    <hr>
-                `;
-                cartsContainer.appendChild(cartDiv);
-            });
-        }
+        // Display each cart
+        carts.forEach(cart => {
+            const cartDiv = document.createElement('div');
+            cartDiv.innerHTML = `
+                <h3>Cart ID: ${cart.cartID}</h3>
+                <p>Status: ${cart.status}</p>
+                <p>Total Price: ${cart.totalPrice}</p>
+                <!-- Add more cart details here as needed -->
+                <hr>
+            `;
+            cartsContainer.appendChild(cartDiv);
+        });
+    }
         function addToCart() {
             const token = localStorage.getItem('jwtToken');
             const furnitureID = document.getElementById("furnitureID").value;
