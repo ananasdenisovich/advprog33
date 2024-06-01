@@ -154,11 +154,11 @@ function confirmPayment() {
 function addToCart() {
     const token = localStorage.getItem('jwtToken');
     const furnitureID = document.getElementById("furnitureID").value;
-    const quantity = parseInt(document.getElementById("quantity").value); // Parse quantity as integer
+    const quantity = parseInt(document.getElementById("quantity").value); 
 
     const cartItem = {
         furnitureID: furnitureID,
-        quantity: quantity, // Ensure quantity is parsed as integer
+        quantity: quantity, 
     };
 
     fetch('http://localhost:8080/cart', {
@@ -172,11 +172,10 @@ function addToCart() {
         .then(response => response.json())
         .then(data => {
             console.log('Cart Response:', data);
-            // Handle response data as needed
+
         })
         .catch(error => {
             console.error('Error adding to cart:', error);
-            // Handle error as needed
         });
 }
 
